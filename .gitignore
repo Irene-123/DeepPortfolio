@@ -1,0 +1,4 @@
+data/**
+metadata/**
+trading_agent_env/**
+**/__pycache__/**
