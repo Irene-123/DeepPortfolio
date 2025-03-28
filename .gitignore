@@ -1,4 +1,4 @@
-data/**
 metadata/**
 trading_agent_env/**
 **/__pycache__/**
+user_data/**

@@ -1,8 +1,7 @@
-import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QLabel
-from PyQt5.QtGui import QCursor
+from PyQt5.QtGui import QCursor, QPainter
 
 class PieChartWidget(QWidget):
     def __init__(self, labels, sizes, parent=None):
@@ -12,7 +11,7 @@ class PieChartWidget(QWidget):
         self.explode = [0] * len(labels)  # Initialize explode values for all slices
 
         # Create layout and canvas
-        layout = QVBoxLayout(self)
+        layout = QVBoxLayout(self)  
         self.figure = Figure()
         self.canvas = FigureCanvas(self.figure)
         layout.addWidget(self.canvas)
@@ -76,3 +75,7 @@ class PieChartWidget(QWidget):
         current_value = sum(self.sizes) if all(e == 0 for e in self.explode) else self.sizes[self.explode.index(0.1)]
         self.ax.text(0, 0, f"{current_value}", ha='center', va='center', fontsize=16, weight='bold')
         self.canvas.draw_idle()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        # ...existing code for painting the pie chart...

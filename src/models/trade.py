@@ -8,3 +8,4 @@ class Trade:
     price: float
     typ: str
     date: datetime.date
+    remarks: str = ""

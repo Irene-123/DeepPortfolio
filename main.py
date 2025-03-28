@@ -1,6 +1,6 @@
 from database import setup_database
-from get_tradebook import get_tradebook, get_adjusted_tradebook
-from get_stock_info import get_stock_info_store, get_index_data
+from lib.get_tradebook import get_tradebook, get_adjusted_tradebook
+from lib.get_stock_info import get_stock_info_store, get_index_data
 from load_holdings import generate_holdings_from_tradebook
 from revenue_per_symbol import calculate_revenue_per_symbol, calculate_revenue_for_index
 import csv
