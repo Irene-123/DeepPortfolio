@@ -45,7 +45,7 @@ class TradeBookTable(QTableWidget):
         self.setRowCount(len(trades))
         for row, trade in enumerate(trades):
             # Assuming models.Trade has attributes: date, symbol, quantity, price, and typ
-            date_item = QTableWidgetItem(trade.date.strftime("%Y-%m-%d"))
+            date_item = QTableWidgetItem(trade.date.strftime("%Y-%m-%d %H:%M:%S"))
             date_item.setData(Qt.UserRole, trade.date)  # Store raw date for sorting
             symbol_item = QTableWidgetItem(trade.symbol)
             quantity_item = QTableWidgetItem(str(trade.quantity))

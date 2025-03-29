@@ -7,5 +7,5 @@ class Trade:
     quantity: int
     price: float
     typ: str
-    date: datetime.date
+    date: datetime.datetime
     remarks: str = ""

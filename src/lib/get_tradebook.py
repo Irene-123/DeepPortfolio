@@ -30,7 +30,7 @@ def load_manual_trades(file_path: str) -> List[Trade]:
             quantity = abs(trade[1]['quantity']),
             price = trade[1]['price'],
             typ = 'buy' if trade[1]['quantity'] > 0 else 'sell',
-            date = datetime.datetime.strptime(trade[1]['trade_date'], "%Y-%m-%d"),
+            date = datetime.datetime.strptime(trade[1]['trade_date'], "%Y-%m-%d").replace(hour=0, minute=0, second=0),
             remarks = trade[1]['remarks']
         ))
     return manual_trades
@@ -56,7 +56,7 @@ def load_tradebook(tradebook_files: List[str], manual_trades_file: str) -> List[
             quantity = trade[1]['quantity'],
             price = trade[1]['price'],
             typ = trade[1]['trade_type'],
-            date = datetime.datetime.strptime(trade[1]['trade_date'], "%Y-%m-%d")
+            date = datetime.datetime.strptime(trade[1]['order_execution_time'], "%Y-%m-%dT%H:%M:%S")
         ))
 
     if manual_trades_file != "":
@@ -83,7 +83,7 @@ def generate_adjusted_tradebook(tradebook: List[Trade], stock_info_store: Dict[s
                 quantity = entry[1]['quantity'],
                 price = entry[1]['price'],
                 typ = entry[1]['type'],
-                date = datetime.datetime.strptime(entry[1]['date'], "%Y-%m-%d").date(),
+                date = datetime.datetime.strptime(entry[1]['date'], "%Y-%m-%d %H:%M:%S"),
                 remarks = entry[1]['remarks'] if not pd.isna(entry[1]['remarks']) else ""
             ))
         return adjusted_tradebook
@@ -91,7 +91,7 @@ def generate_adjusted_tradebook(tradebook: List[Trade], stock_info_store: Dict[s
     tradebook_copy = tradebook.copy()
     for stock in stock_info_store.values():
         for split in stock.stock_splits:
-            tradebook_copy.append(Trade(symbol = stock.symbol, quantity = 0, price = split.ratio, typ = 'bonus', date = datetime.datetime.strptime(split.split_date, "%Y-%m-%d")))
+            tradebook_copy.append(Trade(symbol = stock.symbol, quantity = 0, price = split.ratio, typ = 'bonus', date = datetime.datetime.strptime(split.split_date, "%Y-%m-%d").replace(hour=0, minute=0, second=0)))
     
     tradebook_copy.sort(key=lambda t: t.date)
 
@@ -118,6 +118,6 @@ def generate_adjusted_tradebook(tradebook: List[Trade], stock_info_store: Dict[s
         writer = csv.writer(file)
         writer.writerow(['symbol', 'quantity', 'price', 'type', 'date', 'remarks'])
         for entry in adjusted_tradebook:
-            writer.writerow([entry.symbol, entry.quantity, entry.price, entry.typ, entry.date.strftime("%Y-%m-%d"), entry.remarks])
+            writer.writerow([entry.symbol, entry.quantity, entry.price, entry.typ, entry.date.strftime("%Y-%m-%d %H:%M:%S"), entry.remarks])
 
     return adjusted_tradebook

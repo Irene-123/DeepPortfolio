@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
 
         # Page 1: HoldingsWidget
         self.holdings_widget = HoldingsWidget()
-        self.holdings_widget.set_holdings(self.controller.holdings)
+        self.holdings_widget.set_holdings(self.controller.current_holdings, self.controller.past_holdings)
         self.pages.addWidget(self.holdings_widget)
 
         # Page 2: Dashboard (existing widgets)

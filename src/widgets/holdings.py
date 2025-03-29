@@ -13,63 +13,60 @@ class HoldingsWidget(QWidget):
         main_layout = QVBoxLayout(self)
         splitter = QSplitter(Qt.Horizontal)
 
-        # Left: Table for holdings
-        self.holdings_table = QTableWidget()
-        self.holdings_table.setColumnCount(6)  # Updated to 6 columns
-        self.holdings_table.setHorizontalHeaderLabels([
-            "Symbol", "Quantity", "Buy Average", "Current Position", "Investment", "Profit/Loss"
-        ])
-        self.holdings_table.cellClicked.connect(self.display_details)
-        self.holdings_table.setSortingEnabled(True)  # Enable sorting by columns
-        splitter.addWidget(self.holdings_table)
+        # Left: Two tables for holdings (current and past)
+        left_pane = QVBoxLayout()
 
-        # Customize table appearance
-        self.holdings_table.setAlternatingRowColors(True)
-        self.holdings_table.setStyleSheet("""
-            QTableWidget {
-                background-color: #ffffff;
-                alternate-background-color: #f9f9f9;
-                border: 1px solid #dcdcdc;
-            }
-            QTableWidget::item {
-                border-bottom: 1px solid #dcdcdc;
-                padding: 5px;
-            }
-            QTableWidget::item:selected {
-                background-color: #cce5ff;
-                color: #000000;
-            }
-        """)
-        self.holdings_table.setShowGrid(False)
-
-        # Customize header appearance
-        header = self.holdings_table.horizontalHeader()
-        header.setStyleSheet("""
-            QHeaderView::section {
-                background-color: #4CAF50;
-                color: white;
+        # Label for Current Holdings Table
+        current_holdings_label = QLabel("Current Holdings")
+        current_holdings_label.setStyleSheet("""
+            QLabel {
+                font-size: 18px; /* Increased font size */
                 font-weight: bold;
-                border: 1px solid #dcdcdc;
-                padding: 5px;
+                color: #4CAF50;
+                margin-bottom: 5px;
             }
         """)
-        header.setFont(QFont("Arial", 10, QFont.Bold))
-        header.setDefaultAlignment(Qt.AlignCenter)
+        left_pane.addWidget(current_holdings_label)
 
-        # Set row height and column width
-        self.holdings_table.verticalHeader().setDefaultSectionSize(35)
-        self.holdings_table.horizontalHeader().setStretchLastSection(True)
+        # Current Holdings Table
+        self.current_holdings_table = QTableWidget()
+        self.current_holdings_table.setColumnCount(5)  # Updated to 5 columns
+        self.current_holdings_table.setHorizontalHeaderLabels([
+            "Symbol", "Quantity", "Price Average", "Invested Value", "Unrealized Profit"
+        ])
+        self.current_holdings_table.cellClicked.connect(lambda row, col: self.display_details(row, col, "current"))
+        self.current_holdings_table.setSortingEnabled(True)
+        self._customize_table(self.current_holdings_table)
+        left_pane.addWidget(self.current_holdings_table)
 
-        # Set column widths
-        self.holdings_table.setColumnWidth(0, 120)  # Symbol
-        self.holdings_table.setColumnWidth(1, 100)  # Quantity
-        self.holdings_table.setColumnWidth(2, 150)  # Buy Average
-        self.holdings_table.setColumnWidth(3, 180)  # Current Position
-        self.holdings_table.setColumnWidth(4, 140)  # Investment
-        self.holdings_table.setColumnWidth(5, 120)  # Profit/Loss
+        # Label for Past Holdings Table
+        past_holdings_label = QLabel("Past Holdings")
+        past_holdings_label.setStyleSheet("""
+            QLabel {
+                font-size: 18px; /* Increased font size */
+                font-weight: bold;
+                color: #4CAF50;
+                margin-top: 10px;
+                margin-bottom: 5px;
+            }
+        """)
+        left_pane.addWidget(past_holdings_label)
 
-        # Hide the vertical header (index)
-        self.holdings_table.verticalHeader().setVisible(False)
+        # Past Holdings Table
+        self.past_holdings_table = QTableWidget()
+        self.past_holdings_table.setColumnCount(5)  # Updated to 5 columns
+        self.past_holdings_table.setHorizontalHeaderLabels([
+            "Symbol", "Realized Profit", "Dividend Earned", "Profitable Trades", "Loss Trades"
+        ])
+        self.past_holdings_table.cellClicked.connect(lambda row, col: self.display_details(row, col, "past"))
+        self.past_holdings_table.setSortingEnabled(True)
+        self._customize_table(self.past_holdings_table)
+        left_pane.addWidget(self.past_holdings_table)
+
+        # Add left pane to splitter
+        left_widget = QWidget()
+        left_widget.setLayout(left_pane)
+        splitter.addWidget(left_widget)
 
         # Right: Detailed description pane with a grid layout inside a group box
         self.details_group = QGroupBox("Holding Details")
@@ -207,65 +204,105 @@ class HoldingsWidget(QWidget):
 
         splitter.addWidget(self.details_group)
 
-        # Set initial splitter sizes (40% for table, 60% for description)
-        splitter.setSizes([450, 550])  # Adjust sizes explicitly (e.g., 40% and 60% of 1000px)
-
+        # Set initial splitter sizes (50% for left, 50% for right)
+        splitter.setSizes([500, 500])
         main_layout.addWidget(splitter)
         self.setLayout(main_layout)
 
-    def set_holdings(self, holdings: List[Holding]):
+    def _customize_table(self, table):
         """
-        Populate the table with holdings data.
-        :param holdings: List of tuples [(symbol, quantity, buy_average, current_position, investment, profit_loss), ...]
+        Apply common customizations to the tables.
         """
-        self.holdings_table.setRowCount(len(holdings))
+        table.setAlternatingRowColors(True)
+        table.setStyleSheet("""
+            QTableWidget {
+                background-color: #ffffff;
+                alternate-background-color: #f9f9f9;
+                border: 1px solid #dcdcdc;
+            }
+            QTableWidget::item {
+                border-bottom: 1px solid #dcdcdc;
+                padding: 5px;
+            }
+            QTableWidget::item:selected {
+                background-color: #cce5ff;
+                color: #000000;
+            }
+        """)
+        table.setShowGrid(False)
+        header = table.horizontalHeader()
+        header.setStyleSheet("""
+            QHeaderView::section {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+                border: 1px solid #dcdcdc;
+                padding: 5px;
+            }
+        """)
+        header.setFont(QFont("Arial", 10, QFont.Bold))
+        header.setDefaultAlignment(Qt.AlignCenter)
+        table.verticalHeader().setDefaultSectionSize(35)
+        table.horizontalHeader().setStretchLastSection(True)
+        table.setColumnWidth(0, 120)  # Symbol
+        table.setColumnWidth(1, 100)  # Quantity
+        table.setColumnWidth(2, 150)  # Buy Average
+        table.setColumnWidth(3, 180)  # Current Position
+        table.setColumnWidth(4, 140)  # Investment
+        table.setColumnWidth(5, 120)  # Profit/Loss
+        table.verticalHeader().setVisible(False)
+
+    def set_holdings(self, current_holdings: List[Holding], past_holdings: List[Holding]):
+        """
+        Populate the tables with current and past holdings data.
+        :param current_holdings: List of current holdings.
+        :param past_holdings: List of past holdings.
+        """
+        self._populate_table(self.current_holdings_table, current_holdings, "current")
+        self._populate_table(self.past_holdings_table, past_holdings, "past")
+
+        # Automatically select the first row in the current holdings table
+        if len(current_holdings) > 0:
+            self.current_holdings_table.selectRow(0)
+            self.display_details(0, 0, "current")
+
+    def _populate_table(self, table, holdings: List[Holding], table_type: str):
+        """
+        Populate a given table with holdings data.
+        :param table: The QTableWidget to populate.
+        :param holdings: List of holdings data.
+        :param table_type: Type of table ("current" or "past").
+        """
+        table.setRowCount(len(holdings))
         for row, holding in enumerate(holdings):
-            quantity_item = QTableWidgetItem(str(abs(holding.quantity)))
-            buy_average_item = QTableWidgetItem(str(holding.buy_average))
-            current_position_item = QTableWidgetItem(str("BUY" if holding.quantity > 0 else "SELL"))
-            investment_item = QTableWidgetItem(str(holding.investment))
-            profit_loss_item = QTableWidgetItem(str(holding.unrealized_profit))
+            if table_type == "current":
+                # Populate Current Holdings Table
+                table.setItem(row, 0, QTableWidgetItem(holding.symbol))
+                table.setItem(row, 1, QTableWidgetItem(str(abs(holding.quantity))))
+                table.setItem(row, 2, QTableWidgetItem(str(round(holding.buy_average, 2))))
+                table.setItem(row, 3, QTableWidgetItem(str(round(holding.investment, 2))))
+                table.setItem(row, 4, QTableWidgetItem(str(round(holding.unrealized_profit, 2))))
+            elif table_type == "past":
+                # Populate Past Holdings Table
+                table.setItem(row, 0, QTableWidgetItem(holding.symbol))
+                table.setItem(row, 1, QTableWidgetItem(str(round(holding.realized_profit, 2))))
+                table.setItem(row, 2, QTableWidgetItem(str(round(holding.dividend_income, 2))))
+                table.setItem(row, 3, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit > 0))))  # Fixed
+                table.setItem(row, 4, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit <= 0))))  # Fixed
 
-            # Align numeric columns to the right
-            quantity_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            buy_average_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            current_position_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            investment_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-            profit_loss_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
-
-            # Apply conditional formatting for profit/loss
-            if holding.unrealized_profit == "N/A":
-                profit_loss_item.setForeground(QBrush(QColor(255, 255, 0)))  # Yellow for data not available
-            elif float(holding.unrealized_profit) > 0:
-                profit_loss_item.setForeground(QBrush(QColor(0, 128, 0)))  # Green for profit
-            else:
-                profit_loss_item.setForeground(QBrush(QColor(255, 0, 0)))  # Red for loss
-
-            # Add items to the table
-            self.holdings_table.setItem(row, 0, QTableWidgetItem(holding.symbol))
-            self.holdings_table.setItem(row, 1, quantity_item)
-            self.holdings_table.setItem(row, 2, buy_average_item)
-            self.holdings_table.setItem(row, 3, current_position_item)
-            self.holdings_table.setItem(row, 4, investment_item)
-            self.holdings_table.setItem(row, 5, profit_loss_item)
-
-        # Automatically select the first row and display its details
-        if len(holdings) > 0:
-            self.holdings_table.selectRow(0)
-            self.display_details(0, 0)
-
-    def display_details(self, row, column):
+    def display_details(self, row, column, table_type):
         """
         Display details of the selected holding in the right pane.
         :param row: Row index of the selected holding.
         :param column: Column index of the selected holding.
+        :param table_type: Type of table ("current" or "past").
         """
-        symbol = self.holdings_table.item(row, 0).text()
-        quantity = self.holdings_table.item(row, 1).text()
-        buy_average = self.holdings_table.item(row, 2).text()
-        current_position = self.holdings_table.item(row, 3).text()
-        investment = self.holdings_table.item(row, 4).text()
-        profit_loss = self.holdings_table.item(row, 5).text()
+        table = self.current_holdings_table if table_type == "current" else self.past_holdings_table
+        symbol = table.item(row, 0).text()
+        quantity = table.item(row, 1).text()
+        buy_average = table.item(row, 2).text()
+        current_position = table.item(row, 3).text()
+        investment = table.item(row, 4).text()
 
         # Fetch additional details (mocked for now, replace with actual data source)
         details = {

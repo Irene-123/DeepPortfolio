@@ -69,9 +69,9 @@ def generate_holdings_from_tradebook(symbols: List[str], tradebook: List[Trade],
                 holdings[symbol].realized_profit += holdings[symbol].realized_profit_history[-1]
                 holdings[symbol].investment = abs(holdings[symbol].investment - trade.quantity * trade.price)
 
-            holdings[symbol].quantity_trend.append([trade.date, holdings[symbol].quantity])
+            holdings[symbol].quantity_trend.append([trade.date.date(), holdings[symbol].quantity])
             holdings[symbol].buy_average = abs(holdings[symbol].investment / holdings[symbol].quantity) if holdings[symbol].quantity != 0 else 0
-            holdings[symbol].investment_trend.append([trade.date, holdings[symbol].investment])
+            holdings[symbol].investment_trend.append([trade.date.date(), holdings[symbol].investment])
 
         if symbol in stock_info.keys():
             holdings[symbol].current_price = stock_info[symbol].previous_close
