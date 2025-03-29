@@ -20,6 +20,7 @@ class HoldingsWidget(QWidget):
             "Symbol", "Quantity", "Buy Average", "Current Position", "Investment", "Profit/Loss"
         ])
         self.holdings_table.cellClicked.connect(self.display_details)
+        self.holdings_table.setSortingEnabled(True)  # Enable sorting by columns
         splitter.addWidget(self.holdings_table)
 
         # Customize table appearance

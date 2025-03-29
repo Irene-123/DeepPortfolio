@@ -60,12 +60,12 @@ def generate_holdings_from_tradebook(symbols: List[str], tradebook: List[Trade],
             else:
                 if trade.typ == 'buy' or trade.typ == 'bonus':
                     holdings[symbol].realized_profit_history.append(min(trade.quantity, -holdings[symbol].quantity) * (holdings[symbol].buy_average - trade.price))
-                    holdings[symbol].quantity -= trade.quantity
+                    holdings[symbol].quantity += trade.quantity
                 else:
                     holdings[symbol].realized_profit_history.append(min(trade.quantity, holdings[symbol].quantity) * (trade.price - holdings[symbol].buy_average))
-                    holdings[symbol].quantity += trade.quantity
+                    holdings[symbol].quantity -= trade.quantity
 
-                current_position = 'buy' if holdings[symbol].quantity > 0 else 'sell'
+                current_position = 'buy' if holdings[symbol].quantity >= 0 else 'sell'
                 holdings[symbol].realized_profit += holdings[symbol].realized_profit_history[-1]
                 holdings[symbol].investment = abs(holdings[symbol].investment - trade.quantity * trade.price)
 
