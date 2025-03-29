@@ -59,7 +59,7 @@ def get_dividends_from_db(symbol: str) -> List[Dividend]:
         connection, cursor = connect()
         cursor.execute("SELECT ex_date, amount FROM Dividend WHERE symbol = ?", (symbol,))
         rows = cursor.fetchall()
-        dividends = [Dividend(ex_date=row[0], amount=row[1]) for row in rows]
+        dividends = [Dividend(ex_date=datetime.datetime.strptime(row[0], "%Y-%m-%d").date(), amount=row[1]) for row in rows]
         return dividends
     except sqlite3.Error as e:
         exit(f"Error fetching dividends from database: {e}")

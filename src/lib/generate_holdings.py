@@ -33,6 +33,23 @@ def calculate_index_revenue_for_holding(holding: Holding, index_data: pd.DataFra
     holding.bsesensex_return_trend.append([last_available_date, (index_dict[last_available_date][1] - index_dict[holding.investment_trend[-1][0]][1]) * holding.investment_trend[-1][1]])
     holding.niftybank_return_trend.append([last_available_date, (index_dict[last_available_date][2] - index_dict[holding.investment_trend[-1][0]][2]) * holding.investment_trend[-1][1]])
 
+def calculate_dividend_revenue_for_holding(holding: Holding):
+    dividends = holding.stock_info.dividends if holding.stock_info else []
+    dividends.sort(key=lambda x: x.ex_date)
+    dividend_ptr, quantity_ptr = 0, 0
+
+    while quantity_ptr < len(holding.quantity_trend) and dividend_ptr < len(dividends):
+        if dividends[dividend_ptr].ex_date > holding.quantity_trend[quantity_ptr][0]:
+            quantity_ptr += 1
+        
+        elif quantity_ptr > 0:
+            last_quantity = holding.quantity_trend[quantity_ptr-1][1]
+            holding.dividend_history.append([dividends[dividend_ptr].ex_date, last_quantity * dividends[dividend_ptr].amount])
+            holding.dividend_income += last_quantity * dividends[dividend_ptr].amount
+            dividend_ptr += 1
+
+        else:
+            dividend_ptr += 1
 
 def generate_holdings_from_tradebook(symbols: List[str], tradebook: List[Trade], index_historical_data: pd.DataFrame, stock_info: Dict[str, StockInfo]) -> List[Holding]:
     holdings = {symbol: Holding(symbol=symbol) for symbol in symbols}
@@ -59,14 +76,14 @@ def generate_holdings_from_tradebook(symbols: List[str], tradebook: List[Trade],
             
             else:
                 if trade.typ == 'buy' or trade.typ == 'bonus':
-                    holdings[symbol].realized_profit_history.append(min(trade.quantity, -holdings[symbol].quantity) * (holdings[symbol].buy_average - trade.price))
+                    holdings[symbol].realized_profit_history.append([trade.date.date(), min(trade.quantity, -holdings[symbol].quantity) * (holdings[symbol].buy_average - trade.price)])
                     holdings[symbol].quantity += trade.quantity
                 else:
-                    holdings[symbol].realized_profit_history.append(min(trade.quantity, holdings[symbol].quantity) * (trade.price - holdings[symbol].buy_average))
+                    holdings[symbol].realized_profit_history.append([trade.date.date(), min(trade.quantity, holdings[symbol].quantity) * (trade.price - holdings[symbol].buy_average)])
                     holdings[symbol].quantity -= trade.quantity
 
                 current_position = 'buy' if holdings[symbol].quantity >= 0 else 'sell'
-                holdings[symbol].realized_profit += holdings[symbol].realized_profit_history[-1]
+                holdings[symbol].realized_profit += holdings[symbol].realized_profit_history[-1][1]
                 holdings[symbol].investment = abs(holdings[symbol].investment - trade.quantity * trade.price)
 
             holdings[symbol].quantity_trend.append([trade.date.date(), holdings[symbol].quantity])
@@ -85,4 +102,6 @@ def generate_holdings_from_tradebook(symbols: List[str], tradebook: List[Trade],
             holdings[symbol].unrealized_profit = "N/A"
 
         calculate_index_revenue_for_holding(holdings[symbol], index_historical_data)
+        calculate_dividend_revenue_for_holding(holdings[symbol])
+        
     return list(holdings.values())

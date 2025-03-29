@@ -1,4 +1,5 @@
 from typing import List
+import datetime
 from dataclasses import dataclass, field
 
 from src.models.trade import Trade

@@ -4,6 +4,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QFont, QPainter
 
 from src.models.holding import Holding
+from src.widgets.price_bar import PriceBarWidget  # Import the PriceBarWidget
+from src.widgets.profit_bar_chart import ProfitBarChart  # Import the ProfitBarChart widget
 
 class ProfitLossDelegate(QStyledItemDelegate):
     """
@@ -217,7 +219,16 @@ class HoldingsWidget(QWidget):
         self.symbol_and_profit_layout = QHBoxLayout()
         self.symbol_and_profit_layout.addLayout(self.top_section, stretch=1)
         self.symbol_and_profit_layout.addLayout(self.profit_section, stretch=1)
+
+        # Add the price bar widget to the rightmost corner
+        self.price_bar_widget = PriceBarWidget()
+        self.symbol_and_profit_layout.addWidget(self.price_bar_widget, stretch=1)
+
         self.details_layout.addLayout(self.symbol_and_profit_layout)
+
+        # Add the ProfitBarChart widget to the details layout
+        self.profit_bar_chart = ProfitBarChart([])
+        self.details_layout.addWidget(self.profit_bar_chart)  # Add below everything else
 
         splitter.addWidget(self.details_group)
 
@@ -225,6 +236,9 @@ class HoldingsWidget(QWidget):
         splitter.setSizes([500, 500])
         main_layout.addWidget(splitter)
         self.setLayout(main_layout)
+
+        self.current_holdings = []  # Store current holdings
+        self.past_holdings = []     # Store past holdings
 
     def _customize_table(self, table):
         """
@@ -277,6 +291,9 @@ class HoldingsWidget(QWidget):
         :param current_holdings: List of current holdings.
         :param past_holdings: List of past holdings.
         """
+        self.current_holdings = current_holdings  # Store current holdings
+        self.past_holdings = past_holdings        # Store past holdings
+
         self._populate_table(self.current_holdings_table, current_holdings, "current")
         self._populate_table(self.past_holdings_table, past_holdings, "past")
 
@@ -293,7 +310,9 @@ class HoldingsWidget(QWidget):
         for row, holding in enumerate(holdings):
             if table_type == "current":
                 # Populate Current Holdings Table
-                table.setItem(row, 0, QTableWidgetItem(holding.symbol))
+                item = QTableWidgetItem(holding.symbol)
+                item.setData(Qt.UserRole, holding)  # Store the holding object
+                table.setItem(row, 0, item)
                 table.setItem(row, 1, QTableWidgetItem(str(abs(holding.quantity))))
                 table.setItem(row, 2, QTableWidgetItem(str(round(holding.buy_average, 2))))
                 table.setItem(row, 3, QTableWidgetItem(str(round(holding.investment, 2))))
@@ -307,10 +326,12 @@ class HoldingsWidget(QWidget):
 
             elif table_type == "past":
                 # Populate Past Holdings Table
-                table.setItem(row, 0, QTableWidgetItem(holding.symbol))
+                item = QTableWidgetItem(holding.symbol)
+                item.setData(Qt.UserRole, holding)  # Store the holding object
+                table.setItem(row, 0, item)
                 table.setItem(row, 1, QTableWidgetItem(str(round(holding.dividend_income, 2))))
-                table.setItem(row, 2, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit > 0))))  # Fixed
-                table.setItem(row, 3, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit <= 0))))  # Fixed
+                table.setItem(row, 2, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit[1] > 0))))
+                table.setItem(row, 3, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit[1] <= 0))))
 
                 # Realized Profit with numeric data for sorting and text color
                 realized_profit_item = QTableWidgetItem()
@@ -326,54 +347,33 @@ class HoldingsWidget(QWidget):
         :param column: Column index of the selected holding.
         :param table_type: Type of table ("current" or "past").
         """
+        # Fetch the table based on the type
         table = self.current_holdings_table if table_type == "current" else self.past_holdings_table
-        symbol = table.item(row, 0).text()
-        quantity = table.item(row, 1).text()
-        buy_average = table.item(row, 2).text()
-        current_position = table.item(row, 3).text()
-        investment = table.item(row, 4).text()
 
-        # Fetch additional details (mocked for now, replace with actual data source)
-        details = {
-            "Symbol": symbol,
-            "Industry Type": "Technology",
-            "Sector Type": "Software",
-            "Market Cap": "Large Cap",
-            "Realized Profit": "$500",
-            "Unrealized Profit": "$200",
-            "Risk-Free Return": "3%",
-            "Index Returns": "8%",
-            "Total Investment": investment,
-            "Description": f"{symbol} is a leading company in the technology sector, specializing in software solutions."
-        }
+        # Retrieve the holding object from the selected row using Qt.UserRole
+        holding: Holding = table.item(row, 0).data(Qt.UserRole)  # Type hint added
 
-        # Update the symbol label
-        self.symbol_label.setText(details["Symbol"])
-
-        # Update the profit values with conditional coloring
-        realized_profit = float(details["Realized Profit"].replace("$", ""))
-        unrealized_profit = float(details["Unrealized Profit"].replace("$", ""))
-        invested_amount = float(details["Total Investment"].replace("$", ""))
-
-        self.realized_profit_value.setText(details["Realized Profit"])
+        # Update the description pane with the selected holding's details
+        self.symbol_label.setText(holding.symbol)
+        self.realized_profit_value.setText(f"${holding.realized_profit:,.2f}")
         self.realized_profit_value.setStyleSheet(f"""
             QLabel {{
                 font-size: 40px;
                 font-weight: bold;
-                color: {"green" if realized_profit > 0 else "red"};
+                color: {"green" if holding.realized_profit > 0 else "red"};
             }}
         """)
 
-        self.unrealized_profit_value.setText(details["Unrealized Profit"])
+        self.unrealized_profit_value.setText(f"${holding.unrealized_profit:,.2f}")
         self.unrealized_profit_value.setStyleSheet(f"""
             QLabel {{
                 font-size: 40px;
                 font-weight: bold;
-                color: {"green" if unrealized_profit > 0 else "red"};
+                color: {"green" if holding.unrealized_profit > 0 else "red"};
             }}
         """)
 
-        self.invested_amount_value.setText(f"${invested_amount:,.2f}")
+        self.invested_amount_value.setText(f"${holding.investment:,.2f}")
         self.invested_amount_value.setStyleSheet("""
             QLabel {
                 font-size: 40px;
@@ -383,6 +383,25 @@ class HoldingsWidget(QWidget):
         """)
 
         # Update other details
+        details = {
+            "Industry Type": holding.stock_info.industry,
+            "Sector Type": holding.stock_info.sector,
+            "Market Cap": holding.stock_info.market_cap,
+            "Risk-Free Return": holding.risk_free_return_trend[-1],
+            "Index Returns": holding.nifty50_return_trend[-1],
+            "Total Investment": f"${holding.investment:,.2f}"
+        }
         for key, value in details.items():
             if key in self.details_widgets:
-                self.details_widgets[key].setText(value)
+                self.details_widgets[key].setText(str(value))
+
+        # Update the price bar with actual data from the holding variable
+        self.price_bar_widget.set_prices(
+            high_52_week = holding.stock_info.fifty_two_week_high,
+            low_52_week = holding.stock_info.fifty_two_week_low,
+            current_price = holding.current_price,
+            buy_average = holding.buy_average,
+            trade_prices = holding.trades
+        )
+
+        self.profit_bar_chart.update_data(holding.realized_profit_history)

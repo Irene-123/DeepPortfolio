@@ -50,8 +50,8 @@ def get_dividends(symbol: str, stock: yf.Ticker) -> list[Dividend]:
         dividends_df = stock.get_dividends().to_frame()
         dividends = []
         for row in dividends_df.iterrows():
-            dividends.append(Dividend(ex_date=row[0], amount=row[1]['Dividends']))
             insert_dividend_into_db(symbol=symbol, ex_date=row[0], amount=row[1]['Dividends'])
+            dividends.append(Dividend(ex_date=datetime.datetime.strptime(row[0], "%Y-%m-%d").date(), amount=row[1]['Dividends']))
         return dividends
     except Exception as e:
         print(f"Error fetching dividends for {symbol}: {e}")
