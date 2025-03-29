@@ -21,4 +21,4 @@ class Controller:
 
         # Separate holdings into current and past holdings
         self.current_holdings = [holding for holding in self.holdings if holding.quantity != 0]
-        self.past_holdings = [holding for holding in self.holdings if holding.quantity == 0]
+        self.past_holdings = [holding for holding in self.holdings if len(holding.realized_profit_history) != 0]

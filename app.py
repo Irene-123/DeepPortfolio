@@ -1,6 +1,7 @@
 import sys
 import os
 from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget, QStackedWidget, QPushButton
+from PyQt5.QtGui import QIcon
 from src.widgets.piechart import PieChartWidget
 from src.widgets.chatbox import ChatboxWidget
 from src.widgets.tradebook_table import TradeBookTable
@@ -15,6 +16,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Portfolio 360")
         self.setGeometry(100, 100, 1920, 1080)
+        self.setWindowIcon(QIcon("assets/portfolio360.webp"))  # Set application icon
 
         self.controller = Controller()
 

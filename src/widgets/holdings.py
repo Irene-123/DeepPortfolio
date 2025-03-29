@@ -1,9 +1,26 @@
 from typing import List
-from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QFormLayout, QTextEdit, QFrame, QGroupBox, QGridLayout
+from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QFormLayout, QTextEdit, QFrame, QGroupBox, QGridLayout, QHeaderView, QStyledItemDelegate
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QBrush, QFont
+from PyQt5.QtGui import QColor, QBrush, QFont, QPainter
 
 from src.models.holding import Holding
+
+class ProfitLossDelegate(QStyledItemDelegate):
+    """
+    Custom delegate to handle coloring of profit/loss cells.
+    """
+    def paint(self, painter, option, index):
+        value = index.data()  # Get the cell value
+        if value is not None and isinstance(value, str):
+            try:
+                numeric_value = float(value)
+                if numeric_value > 0:
+                    option.palette.setColor(option.palette.Text, QColor(0, 128, 0))  # Dark green
+                elif numeric_value < 0:
+                    option.palette.setColor(option.palette.Text, QColor(255, 0, 0))  # Red
+            except ValueError:
+                pass  # Ignore non-numeric values
+        super().paint(painter, option, index)
 
 class HoldingsWidget(QWidget):
     def __init__(self, parent=None):
@@ -20,7 +37,7 @@ class HoldingsWidget(QWidget):
         current_holdings_label = QLabel("Current Holdings")
         current_holdings_label.setStyleSheet("""
             QLabel {
-                font-size: 18px; /* Increased font size */
+                font-size: 22px; /* Increased font size */
                 font-weight: bold;
                 color: #4CAF50;
                 margin-bottom: 5px;
@@ -43,7 +60,7 @@ class HoldingsWidget(QWidget):
         past_holdings_label = QLabel("Past Holdings")
         past_holdings_label.setStyleSheet("""
             QLabel {
-                font-size: 18px; /* Increased font size */
+                font-size: 22px; /* Increased font size */
                 font-weight: bold;
                 color: #4CAF50;
                 margin-top: 10px;
@@ -56,7 +73,7 @@ class HoldingsWidget(QWidget):
         self.past_holdings_table = QTableWidget()
         self.past_holdings_table.setColumnCount(5)  # Updated to 5 columns
         self.past_holdings_table.setHorizontalHeaderLabels([
-            "Symbol", "Realized Profit", "Dividend Earned", "Profitable Trades", "Loss Trades"
+            "Symbol", "Dividend Earned", "Profitable Trades", "Loss Trades", "Realized Profit"
         ])
         self.past_holdings_table.cellClicked.connect(lambda row, col: self.display_details(row, col, "past"))
         self.past_holdings_table.setSortingEnabled(True)
@@ -225,11 +242,13 @@ class HoldingsWidget(QWidget):
                 padding: 5px;
             }
             QTableWidget::item:selected {
-                background-color: #cce5ff;
+                background-color: #cce5ff; /* Highlight entire row */
                 color: #000000;
             }
         """)
-        table.setShowGrid(False)
+        table.setSelectionBehavior(table.SelectRows)  # Highlight entire row on selection
+        table.setShowGrid(True)
+        table.setGridStyle(Qt.SolidLine)
         header = table.horizontalHeader()
         header.setStyleSheet("""
             QHeaderView::section {
@@ -242,15 +261,15 @@ class HoldingsWidget(QWidget):
         """)
         header.setFont(QFont("Arial", 10, QFont.Bold))
         header.setDefaultAlignment(Qt.AlignCenter)
+        header.setSectionResizeMode(QHeaderView.Stretch)  # Make all columns expand equally
         table.verticalHeader().setDefaultSectionSize(35)
-        table.horizontalHeader().setStretchLastSection(True)
-        table.setColumnWidth(0, 120)  # Symbol
-        table.setColumnWidth(1, 100)  # Quantity
-        table.setColumnWidth(2, 150)  # Buy Average
-        table.setColumnWidth(3, 180)  # Current Position
-        table.setColumnWidth(4, 140)  # Investment
-        table.setColumnWidth(5, 120)  # Profit/Loss
         table.verticalHeader().setVisible(False)
+
+        # Apply delegate to the correct columns
+        if table == self.current_holdings_table:
+            table.setItemDelegateForColumn(4, ProfitLossDelegate())  # Unrealized Profit column
+        elif table == self.past_holdings_table:
+            table.setItemDelegateForColumn(4, ProfitLossDelegate())  # Realized Profit column
 
     def set_holdings(self, current_holdings: List[Holding], past_holdings: List[Holding]):
         """
@@ -269,9 +288,6 @@ class HoldingsWidget(QWidget):
     def _populate_table(self, table, holdings: List[Holding], table_type: str):
         """
         Populate a given table with holdings data.
-        :param table: The QTableWidget to populate.
-        :param holdings: List of holdings data.
-        :param table_type: Type of table ("current" or "past").
         """
         table.setRowCount(len(holdings))
         for row, holding in enumerate(holdings):
@@ -281,14 +297,27 @@ class HoldingsWidget(QWidget):
                 table.setItem(row, 1, QTableWidgetItem(str(abs(holding.quantity))))
                 table.setItem(row, 2, QTableWidgetItem(str(round(holding.buy_average, 2))))
                 table.setItem(row, 3, QTableWidgetItem(str(round(holding.investment, 2))))
-                table.setItem(row, 4, QTableWidgetItem(str(round(holding.unrealized_profit, 2))))
+
+                # Unrealized Profit with numeric data for sorting and text color
+                unrealized_profit_item = QTableWidgetItem()
+                unrealized_profit_item.setData(Qt.DisplayRole, round(holding.unrealized_profit, 2))
+                color = QColor(0, 128, 0) if holding.unrealized_profit >= 0 else QColor(255, 0, 0)
+                unrealized_profit_item.setForeground(QBrush(color))
+                table.setItem(row, 4, unrealized_profit_item)
+
             elif table_type == "past":
                 # Populate Past Holdings Table
                 table.setItem(row, 0, QTableWidgetItem(holding.symbol))
-                table.setItem(row, 1, QTableWidgetItem(str(round(holding.realized_profit, 2))))
-                table.setItem(row, 2, QTableWidgetItem(str(round(holding.dividend_income, 2))))
-                table.setItem(row, 3, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit > 0))))  # Fixed
-                table.setItem(row, 4, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit <= 0))))  # Fixed
+                table.setItem(row, 1, QTableWidgetItem(str(round(holding.dividend_income, 2))))
+                table.setItem(row, 2, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit > 0))))  # Fixed
+                table.setItem(row, 3, QTableWidgetItem(str(sum(1 for profit in holding.realized_profit_history if profit <= 0))))  # Fixed
+
+                # Realized Profit with numeric data for sorting and text color
+                realized_profit_item = QTableWidgetItem()
+                realized_profit_item.setData(Qt.DisplayRole, round(holding.realized_profit, 2))
+                color = QColor(0, 128, 0) if holding.realized_profit >= 0 else QColor(255, 0, 0)
+                realized_profit_item.setForeground(QBrush(color))
+                table.setItem(row, 4, realized_profit_item)
 
     def display_details(self, row, column, table_type):
         """
