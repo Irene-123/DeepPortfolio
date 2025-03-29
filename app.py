@@ -1,20 +1,20 @@
 import sys
-import os  # Add import for os module
-from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget, QSpacerItem, QSizePolicy, QStackedWidget, QPushButton  # Add QStackedWidget and QPushButton
+import os
+from PyQt5.QtWidgets import QApplication, QMainWindow, QHBoxLayout, QVBoxLayout, QWidget, QStackedWidget, QPushButton
 from src.widgets.piechart import PieChartWidget
 from src.widgets.chatbox import ChatboxWidget
 from src.widgets.tradebook_table import TradeBookTable
-from src.widgets.welcome import WelcomeWidget  # Import WelcomeWidget
+from src.widgets.welcome import WelcomeWidget
 from src.lib.controller import Controller
-from src.widgets.price_bar import PriceBarWidget  # Import PriceBarWidget
-from src.widgets.holdings import HoldingsWidget  # Import HoldingsWidget
+from src.widgets.price_bar import PriceBarWidget
+from src.widgets.holdings import HoldingsWidget
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Portfolio 360")
-        self.setGeometry(100, 100, 1920, 1080)  # Updated size to 1920x1080
+        self.setGeometry(100, 100, 1920, 1080)
 
         self.controller = Controller()
 
@@ -38,12 +38,7 @@ class MainWindow(QMainWindow):
 
         # Page 1: HoldingsWidget
         self.holdings_widget = HoldingsWidget()
-        sample_holdings = [
-            ("AAPL", 150, 145.50, 148.00, 21750.00, 375.00),
-            ("GOOGL", 200, 2800.00, 2900.00, 560000.00, 20000.00),
-            ("AMZN", 100, 3300.00, 3200.00, 330000.00, -10000.00)
-        ]  # Updated sample holdings data
-        self.holdings_widget.set_holdings(sample_holdings)
+        self.holdings_widget.set_holdings(self.controller.holdings)
         self.pages.addWidget(self.holdings_widget)
 
         # Page 2: Dashboard (existing widgets)

@@ -232,7 +232,7 @@ class WelcomeWidget(QMainWindow):
         page.setLayout(layout)
         return page
 
-    def save_user_details(self, name_input, email_input):
+    def save_user_details(self, name_input: str, email_input: str):
         """Save user details and navigate to the next page."""
         self.user_details['name'] = name_input.text()
         self.user_details['email'] = email_input.text()
