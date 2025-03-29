@@ -1,6 +1,9 @@
+from typing import List
 from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QFormLayout, QTextEdit, QFrame, QGroupBox, QGridLayout
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QFont
+
+from src.models.holding import Holding
 
 class HoldingsWidget(QWidget):
     def __init__(self, parent=None):
@@ -209,18 +212,18 @@ class HoldingsWidget(QWidget):
         main_layout.addWidget(splitter)
         self.setLayout(main_layout)
 
-    def set_holdings(self, holdings):
+    def set_holdings(self, holdings: List[Holding]):
         """
         Populate the table with holdings data.
         :param holdings: List of tuples [(symbol, quantity, buy_average, current_position, investment, profit_loss), ...]
         """
         self.holdings_table.setRowCount(len(holdings))
-        for row, (symbol, quantity, buy_average, current_position, investment, profit_loss) in enumerate(holdings):
-            quantity_item = QTableWidgetItem(str(quantity))
-            buy_average_item = QTableWidgetItem(str(buy_average))
-            current_position_item = QTableWidgetItem(str(current_position))
-            investment_item = QTableWidgetItem(str(investment))
-            profit_loss_item = QTableWidgetItem(str(profit_loss))
+        for row, holding in enumerate(holdings):
+            quantity_item = QTableWidgetItem(str(abs(holding.quantity)))
+            buy_average_item = QTableWidgetItem(str(holding.buy_average))
+            current_position_item = QTableWidgetItem(str("BUY" if holding.quantity > 0 else "SELL"))
+            investment_item = QTableWidgetItem(str(holding.investment))
+            profit_loss_item = QTableWidgetItem(str(holding.unrealized_profit))
 
             # Align numeric columns to the right
             quantity_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
@@ -230,13 +233,15 @@ class HoldingsWidget(QWidget):
             profit_loss_item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
             # Apply conditional formatting for profit/loss
-            if float(profit_loss) > 0:
+            if holding.unrealized_profit == "N/A":
+                profit_loss_item.setForeground(QBrush(QColor(255, 255, 0)))  # Yellow for data not available
+            elif float(holding.unrealized_profit) > 0:
                 profit_loss_item.setForeground(QBrush(QColor(0, 128, 0)))  # Green for profit
             else:
                 profit_loss_item.setForeground(QBrush(QColor(255, 0, 0)))  # Red for loss
 
             # Add items to the table
-            self.holdings_table.setItem(row, 0, QTableWidgetItem(symbol))
+            self.holdings_table.setItem(row, 0, QTableWidgetItem(holding.symbol))
             self.holdings_table.setItem(row, 1, quantity_item)
             self.holdings_table.setItem(row, 2, buy_average_item)
             self.holdings_table.setItem(row, 3, current_position_item)

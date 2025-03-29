@@ -83,7 +83,7 @@ def generate_adjusted_tradebook(tradebook: List[Trade], stock_info_store: Dict[s
                 quantity = entry[1]['quantity'],
                 price = entry[1]['price'],
                 typ = entry[1]['type'],
-                date = datetime.datetime.strptime(entry[1]['date'], "%Y-%m-%d"),
+                date = datetime.datetime.strptime(entry[1]['date'], "%Y-%m-%d").date(),
                 remarks = entry[1]['remarks'] if not pd.isna(entry[1]['remarks']) else ""
             ))
         return adjusted_tradebook
