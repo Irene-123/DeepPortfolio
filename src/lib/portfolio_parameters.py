@@ -68,13 +68,13 @@ def compute_monthly_investment_trend(holding: Holding):
     investment_trend_df = investment_trend_df.sort_values('date')
 
     # Group by month and take the last value of each month
-    monthly_trend = investment_trend_df.resample('M', on='date').last()
+    monthly_trend = investment_trend_df.resample('M', on='date').last().ffill()
 
     # Update the holding's investment_trend with the monthly trend
-    holding.investment_trend = list(monthly_trend.itertuples(index=False, name=None))
+    return monthly_trend.reset_index()[['date', 'value']].values.tolist()
 
 
-def portfolio_parameters(holdings: Holding, stock_info: Dict[str, StockInfo]) -> Portfolio:
+def portfolio_parameters(holdings: List[Holding], stock_info: Dict[str, StockInfo]) -> Portfolio:
     """
     This function calculates several portfolio parameters
     E.g.: 
@@ -86,14 +86,6 @@ def portfolio_parameters(holdings: Holding, stock_info: Dict[str, StockInfo]) ->
         - Portfolio Dividend Amount
     """
     portfolio = Portfolio(holdings=holdings, stocks=stock_info.values())
-    portfolio.total_investment = 0
-    portfolio.current_value = 0
-    portfolio.profit_loss = 0
-    portfolio.yield_on_cost = 0
-    portfolio.dividend_yield = 0
-    portfolio.average_dividend_yield = 0
-    portfolio.sharpe_ratio = 0
-    portfolio.sortino_ratio = 0
 
     # Example risk-free rate (annualized, e.g., 3%)
     risk_free_rate = 0.03
@@ -101,18 +93,17 @@ def portfolio_parameters(holdings: Holding, stock_info: Dict[str, StockInfo]) ->
     downside_returns = []
 
     for holding in holdings:
-        
         symbol = holding.symbol
         stock = stock_info.get(symbol)
         price_to_book = stock.price_to_book if stock else 0
-        target_price = stock.target_price if stock else 0
+        target_price = stock.target_high_price if stock else 0
         trailing_pe = stock.trailing_pe if stock else 0
-        price_to_sales = stock.price_to_sales if stock else 0
+        price_to_sales = stock.price_to_sales_trailing_12_months if stock else 0
         enterprise_to_revenue = stock.enterprise_to_revenue if stock else 0
         beta = stock.beta if stock else 0
         forward_pe = stock.forward_pe if stock else 0
 
-        investment_trend = compute_monthly_investment_trend(holding.investment_trend)
+        investment_trend = compute_monthly_investment_trend(holding)
         print(investment_trend)
 
         portfolio.total_investment += holding.buy_average * holding.quantity

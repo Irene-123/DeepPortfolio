@@ -20,7 +20,9 @@ class Controller:
         self.adjusted_tradebook = generate_adjusted_tradebook(self.tradebook, self.stock_info_store)
         self.index_returns = get_index_data()
         self.holdings = generate_holdings_from_tradebook(self.symbols, self.adjusted_tradebook, self.index_returns, self.stock_info_store)
-        self.portfolio = portfolio_parameters(self.holdings, self.stock_info_store)
+        
         # Separate holdings into current and past holdings
         self.current_holdings = [holding for holding in self.holdings if holding.quantity != 0]
         self.past_holdings = [holding for holding in self.holdings if len(holding.realized_profit_history) != 0]
+
+        self.portfolio = portfolio_parameters(self.current_holdings, self.stock_info_store)
