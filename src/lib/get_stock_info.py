@@ -27,8 +27,8 @@ def get_stock_splits(symbol: str, stock: yf.Ticker) -> list[StockSplit]:
         stock_splits_df = stock.get_splits().to_frame()
         stock_splits = []
         for row in stock_splits_df.iterrows():
-            stock_splits.append(StockSplit(split_date=row[0], ratio=row[1]['Stock Splits']))
-            insert_stock_split_into_db(symbol=symbol, split_date=row[0], ratio=row[1]['Stock Splits'])
+            stock_splits.append(StockSplit(split_date=row[0].date(), ratio=row[1]['Stock Splits']))
+            insert_stock_split_into_db(symbol=symbol, split_date=row[0].date(), ratio=row[1]['Stock Splits'])
         return stock_splits
     except Exception as e:
         print(f"Error fetching stock splits for {symbol}: {e}")
@@ -50,8 +50,8 @@ def get_dividends(symbol: str, stock: yf.Ticker) -> list[Dividend]:
         dividends_df = stock.get_dividends().to_frame()
         dividends = []
         for row in dividends_df.iterrows():
-            insert_dividend_into_db(symbol=symbol, ex_date=row[0], amount=row[1]['Dividends'])
-            dividends.append(Dividend(ex_date=datetime.datetime.strptime(row[0], "%Y-%m-%d").date(), amount=row[1]['Dividends']))
+            insert_dividend_into_db(symbol=symbol, ex_date=row[0].date(), amount=row[1]['Dividends'])
+            dividends.append(Dividend(ex_date=row[0].date(), amount=row[1]['Dividends']))
         return dividends
     except Exception as e:
         print(f"Error fetching dividends for {symbol}: {e}")

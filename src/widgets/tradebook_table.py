@@ -12,7 +12,7 @@ class TradeBookTable(QTableWidget):
         super().__init__(parent)
         
         self.setColumnCount(7)  # Adjust based on Trade attributes
-        self.setHorizontalHeaderLabels(["Date", "Symbol", "Quantity", "Price", "Type", "Investment", "Remarks"])
+        self.setHorizontalHeaderLabels(["Timestamp", "Symbol", "Quantity", "Price", "Type", "Investment", "Remarks"])
         self.setSortingEnabled(True)  # Enable sorting by columns
 
         # Set alternating row colors
@@ -45,8 +45,8 @@ class TradeBookTable(QTableWidget):
         self.setRowCount(len(trades))
         for row, trade in enumerate(trades):
             # Assuming models.Trade has attributes: date, symbol, quantity, price, and typ
-            date_item = QTableWidgetItem(trade.date.strftime("%Y-%m-%d %H:%M:%S"))
-            date_item.setData(Qt.UserRole, trade.date)  # Store raw date for sorting
+            date_item = QTableWidgetItem(trade.timestamp.strftime("%Y-%m-%d %H:%M:%S"))
+            date_item.setData(Qt.UserRole, trade.timestamp)  # Store raw date for sorting
             symbol_item = QTableWidgetItem(trade.symbol)
             quantity_item = QTableWidgetItem(str(trade.quantity))
             price_item = QTableWidgetItem(f"{trade.price:.2f}")

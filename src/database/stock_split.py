@@ -60,7 +60,7 @@ def get_stock_splits_from_db(symbol: str) -> List[StockSplit]:
         connection, cursor = connect()
         cursor.execute("SELECT split_date, ratio FROM StockSplit WHERE symbol = ?", (symbol,))
         rows = cursor.fetchall()
-        stock_splits = [StockSplit(split_date=row[0], ratio=row[1]) for row in rows]
+        stock_splits = [StockSplit(split_date=datetime.datetime.strptime(row[0], "%Y-%m-%d").date(), ratio=row[1]) for row in rows]
         return stock_splits
     except sqlite3.Error as e:
         exit(f"Error fetching stock splits from database: {e}")

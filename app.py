@@ -72,17 +72,6 @@ class MainWindow(QMainWindow):
         self.tradebook_table.populateTable(sample_trades)
         right_layout.addWidget(self.tradebook_table)
 
-        # Add PriceBarWidget
-        price_bar = PriceBarWidget()
-        price_bar.set_prices(
-            high_52_week=150,
-            low_52_week=50,
-            current_price=120,
-            buy_average=100,
-            trade_prices=[90, 110, 130]
-        )
-        right_layout.addWidget(price_bar)
-
         self.pages.addWidget(dashboard_page)
 
         # Show HoldingsWidget by default

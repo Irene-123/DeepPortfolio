@@ -76,19 +76,23 @@ def generate_holdings_from_tradebook(symbols: List[str], tradebook: List[Trade],
             
             else:
                 if trade.typ == 'buy' or trade.typ == 'bonus':
-                    holdings[symbol].realized_profit_history.append([trade.date.date(), min(trade.quantity, -holdings[symbol].quantity) * (holdings[symbol].buy_average - trade.price)])
+                    holdings[symbol].realized_profit_history.append([trade.timestamp, min(trade.quantity, -holdings[symbol].quantity) * (holdings[symbol].buy_average - trade.price)])
                     holdings[symbol].quantity += trade.quantity
                 else:
-                    holdings[symbol].realized_profit_history.append([trade.date.date(), min(trade.quantity, holdings[symbol].quantity) * (trade.price - holdings[symbol].buy_average)])
+                    holdings[symbol].realized_profit_history.append([trade.timestamp, min(trade.quantity, holdings[symbol].quantity) * (trade.price - holdings[symbol].buy_average)])
                     holdings[symbol].quantity -= trade.quantity
 
                 current_position = 'buy' if holdings[symbol].quantity >= 0 else 'sell'
                 holdings[symbol].realized_profit += holdings[symbol].realized_profit_history[-1][1]
                 holdings[symbol].investment = abs(holdings[symbol].investment - trade.quantity * trade.price)
 
-            holdings[symbol].quantity_trend.append([trade.date.date(), holdings[symbol].quantity])
+            if len(holdings[symbol].quantity_trend) > 0 and holdings[symbol].quantity_trend[-1][0] == trade.timestamp.date():
+                holdings[symbol].quantity_trend[-1][1] = holdings[symbol].quantity
+                holdings[symbol].investment_trend[-1][1] = holdings[symbol].investment
+            else:
+                holdings[symbol].quantity_trend.append([trade.timestamp.date(), holdings[symbol].quantity])
+                holdings[symbol].investment_trend.append([trade.timestamp.date(), holdings[symbol].investment])
             holdings[symbol].buy_average = abs(holdings[symbol].investment / holdings[symbol].quantity) if holdings[symbol].quantity != 0 else 0
-            holdings[symbol].investment_trend.append([trade.date.date(), holdings[symbol].investment])
 
         if symbol in stock_info.keys():
             holdings[symbol].current_price = stock_info[symbol].previous_close

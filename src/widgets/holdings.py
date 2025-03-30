@@ -355,7 +355,7 @@ class HoldingsWidget(QWidget):
 
         # Update the description pane with the selected holding's details
         self.symbol_label.setText(holding.symbol)
-        self.realized_profit_value.setText(f"${holding.realized_profit:,.2f}")
+        self.realized_profit_value.setText(f"{holding.realized_profit:,.2f}")
         self.realized_profit_value.setStyleSheet(f"""
             QLabel {{
                 font-size: 40px;
@@ -364,7 +364,7 @@ class HoldingsWidget(QWidget):
             }}
         """)
 
-        self.unrealized_profit_value.setText(f"${holding.unrealized_profit:,.2f}")
+        self.unrealized_profit_value.setText(f"{holding.unrealized_profit:,.2f}")
         self.unrealized_profit_value.setStyleSheet(f"""
             QLabel {{
                 font-size: 40px;
@@ -373,7 +373,7 @@ class HoldingsWidget(QWidget):
             }}
         """)
 
-        self.invested_amount_value.setText(f"${holding.investment:,.2f}")
+        self.invested_amount_value.setText(f"{holding.investment:,.2f}")
         self.invested_amount_value.setStyleSheet("""
             QLabel {
                 font-size: 40px;
@@ -387,9 +387,9 @@ class HoldingsWidget(QWidget):
             "Industry Type": holding.stock_info.industry,
             "Sector Type": holding.stock_info.sector,
             "Market Cap": holding.stock_info.market_cap,
-            "Risk-Free Return": holding.risk_free_return_trend[-1],
-            "Index Returns": holding.nifty50_return_trend[-1],
-            "Total Investment": f"${holding.investment:,.2f}"
+            "Risk-Free Return": round(holding.risk_free_return_trend[-1][1], 2),
+            "Index Returns": round(holding.nifty50_return_trend[-1][1], 2),
+            "Total Investment": f"{holding.investment:,.2f}"
         }
         for key, value in details.items():
             if key in self.details_widgets:
