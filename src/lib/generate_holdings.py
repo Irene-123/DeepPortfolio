@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 import pandas as pd
 from typing import List, Dict
 
@@ -20,18 +21,39 @@ def calculate_index_revenue_for_holding(holding: Holding, index_data: pd.DataFra
         last_date = holding.investment_trend[ind - 1][0]
         current_date = holding.investment_trend[ind][0]
         number_of_days = (holding.investment_trend[ind][0] - holding.investment_trend[ind - 1][0]).days
-        
-        holding.risk_free_return_trend.append([current_date, holding.investment_trend[ind - 1][1] * number_of_days * 0.075 / 365])
-        holding.nifty50_return_trend.append([current_date, (index_dict[current_date][0] - index_dict[last_date][0]) * holding.investment_trend[ind - 1][1]])
-        holding.bsesensex_return_trend.append([current_date, (index_dict[current_date][1] - index_dict[last_date][1]) * holding.investment_trend[ind - 1][1]])
-        holding.niftybank_return_trend.append([current_date, (index_dict[current_date][2] - index_dict[last_date][2]) * holding.investment_trend[ind - 1][1]])
+
+        while last_date not in index_dict:
+            last_date -= timedelta(days=1)
+            while last_date.weekday() in (5, 6):
+                last_date -= timedelta(days=1)
+
+        if current_date in index_dict:
+            holding.risk_free_return_trend.append([current_date, holding.investment_trend[ind - 1][1] * number_of_days * 0.075 / 365])
+            holding.nifty50_return_trend.append([current_date, (index_dict[current_date][0] - index_dict[last_date][0]) * holding.investment_trend[ind - 1][1]])
+            holding.bsesensex_return_trend.append([current_date, (index_dict[current_date][1] - index_dict[last_date][1]) * holding.investment_trend[ind - 1][1]])
+            holding.niftybank_return_trend.append([current_date, (index_dict[current_date][2] - index_dict[last_date][2]) * holding.investment_trend[ind - 1][1]])
+        else:
+            print(f"Warning: Missing index data for current_date {current_date}. Skipping calculation for this period.")
 
     last_available_date = index_data["date"].max()
     number_of_days = (last_available_date - holding.investment_trend[-1][0]).days
-    holding.risk_free_return_trend.append([last_available_date, holding.investment_trend[-1][1] * number_of_days * 0.075 / 365])
-    holding.nifty50_return_trend.append([last_available_date, (index_dict[last_available_date][0] - index_dict[holding.investment_trend[-1][0]][0]) * holding.investment_trend[-1][1]])
-    holding.bsesensex_return_trend.append([last_available_date, (index_dict[last_available_date][1] - index_dict[holding.investment_trend[-1][0]][1]) * holding.investment_trend[-1][1]])
-    holding.niftybank_return_trend.append([last_available_date, (index_dict[last_available_date][2] - index_dict[holding.investment_trend[-1][0]][2]) * holding.investment_trend[-1][1]])
+
+    last_date = holding.investment_trend[-1][0]
+    while last_date not in index_dict:
+        last_date -= timedelta(days=1)
+        while last_date.weekday() in (5, 6):
+            last_date -= timedelta(days=1)
+
+    # Ensure last_available_date exists in index_dict
+    if last_available_date in index_dict:
+        holding.risk_free_return_trend.append([last_available_date, holding.investment_trend[-1][1] * number_of_days * 0.075 / 365])
+        holding.nifty50_return_trend.append([last_available_date, (index_dict[last_available_date][0] - index_dict[last_date][0]) * holding.investment_trend[-1][1]])
+        holding.bsesensex_return_trend.append([last_available_date, (index_dict[last_available_date][1] - index_dict[last_date][1]) * holding.investment_trend[-1][1]])
+        holding.niftybank_return_trend.append([last_available_date, (index_dict[last_available_date][2] - index_dict[last_date][2]) * holding.investment_trend[-1][1]])
+    else:
+        print(f"Warning: Missing index data for last_available_date {last_available_date}. Skipping final calculation.")
+
+
 
 def calculate_dividend_revenue_for_holding(holding: Holding):
     dividends = holding.stock_info.dividends if holding.stock_info else []
