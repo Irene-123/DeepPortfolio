@@ -1,5 +1,5 @@
 from typing import List
-from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QFormLayout, QTextEdit, QFrame, QGroupBox, QGridLayout, QHeaderView, QStyledItemDelegate
+from PyQt5.QtWidgets import QWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QHBoxLayout, QLabel, QSplitter, QFormLayout, QTextEdit, QFrame, QGroupBox, QGridLayout, QHeaderView, QStyledItemDelegate, QTabWidget, QScrollArea
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QFont, QPainter
 
@@ -27,6 +27,12 @@ class ProfitLossDelegate(QStyledItemDelegate):
 class HoldingsWidget(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Initialize stock_info_widgets dictionary
+        self.stock_info_widgets = {}
+
+        # Initialize the ProfitBarChart widget
+        self.profit_bar_chart = ProfitBarChart([])
 
         # Main layout with QSplitter for adjustable widths
         main_layout = QVBoxLayout(self)
@@ -224,11 +230,96 @@ class HoldingsWidget(QWidget):
         self.price_bar_widget = PriceBarWidget()
         self.symbol_and_profit_layout.addWidget(self.price_bar_widget, stretch=1)
 
-        self.details_layout.addLayout(self.symbol_and_profit_layout)
+        # Replace the details layout with a tabbed structure
+        self.details_tabs = QTabWidget()
+        self.details_layout.addWidget(self.details_tabs)
 
-        # Add the ProfitBarChart widget to the details layout
-        self.profit_bar_chart = ProfitBarChart([])
-        self.details_layout.addWidget(self.profit_bar_chart)  # Add below everything else
+        # Tab 1: Existing details
+        tab1_widget = QWidget()
+        tab1_layout = QVBoxLayout(tab1_widget)
+        tab1_layout.addLayout(self.symbol_and_profit_layout)
+        tab1_layout.addWidget(self.profit_bar_chart)  # Use the initialized widget
+        self.details_tabs.addTab(tab1_widget, "Overview")
+
+        # Tab 2: StockInfo details
+        tab2_widget = QWidget()
+        tab2_layout = QVBoxLayout(tab2_widget)
+
+        # Add a scrollable area for StockInfo details
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+
+        # Helper function to create cluster sections
+        def create_cluster_section(title, attributes):
+            section_widget = QWidget()
+            section_layout = QVBoxLayout(section_widget)
+            section_layout.setSpacing(10)
+
+            # Add section title
+            title_label = QLabel(f"<b>{title}</b>")
+            title_label.setStyleSheet("""
+                QLabel {
+                    font-size: 16px;
+                    font-weight: bold;
+                    color: #4CAF50;
+                    margin-bottom: 10px;
+                }
+            """)
+            section_layout.addWidget(title_label)
+
+            # Add attributes in a multi-column grid layout
+            grid_layout = QGridLayout()
+            grid_layout.setHorizontalSpacing(20)
+            grid_layout.setVerticalSpacing(10)
+
+            for row, attr in enumerate(attributes):
+                label = QLabel(attr.replace("_", " ").title() + ":")
+                label.setStyleSheet("font-weight: bold; color: #333;")
+                value_label = QLabel()
+                value_label.setStyleSheet("color: #666;")
+                grid_layout.addWidget(label, row // 2, (row % 2) * 2, alignment=Qt.AlignRight)
+                grid_layout.addWidget(value_label, row // 2, (row % 2) * 2 + 1, alignment=Qt.AlignLeft)
+                self.stock_info_widgets[attr] = value_label
+
+            section_layout.addLayout(grid_layout)
+            return section_widget
+
+        # Populate StockInfo details in clusters
+        scroll_layout.addWidget(create_cluster_section("Basic Information", [
+            "symbol", "symbol_yf", "name", "city", "industry", "sector"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Price and Volume", [
+            "previous_close", "volume", "average_volume_10days", "average_volume_3months",
+            "fifty_two_week_low", "fifty_two_week_high", "fifty_two_week_change"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Valuation Metrics", [
+            "market_cap", "book_value", "price_to_sales_trailing_12_months", "price_to_book",
+            "trailing_pe", "forward_pe", "trailing_eps", "forward_eps", "price_eps_current_year"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Moving Averages", [
+            "fifty_day_average", "two_hundred_day_average"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Financial Ratios", [
+            "beta", "debt_to_equity", "enterprise_to_revenue", "enterprise_to_ebitda"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Financial Performance", [
+            "ebitda", "total_debt", "total_revenue", "revenue_per_share", "gross_profit",
+            "revenue_growth", "gross_margins", "ebitda_margins", "operating_margins",
+            "eps_trailing_12months", "eps_forward", "eps_current_year"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Price Targets", [
+            "target_high_price", "target_low_price", "target_mean_price"
+        ]))
+        scroll_layout.addWidget(create_cluster_section("Dividends", [
+            "dividend_yield", "five_year_average_dividend_yield"
+        ]))
+
+        scroll_content.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_content)
+        tab2_layout.addWidget(scroll_area)
+        self.details_tabs.addTab(tab2_widget, "Stock Info")
 
         splitter.addWidget(self.details_group)
 
@@ -405,3 +496,19 @@ class HoldingsWidget(QWidget):
         )
 
         self.profit_bar_chart.update_data(holding.realized_profit_history)
+
+        # Update Tab 2 with StockInfo details
+        stock_info = holding.stock_info
+        for attr, widget in self.stock_info_widgets.items():
+            value = getattr(stock_info, attr, "N/A")
+            widget.setText(str(value))
+
+    def _add_stock_info_row(self, layout, attr):
+        """
+        Helper method to add a row for a StockInfo attribute.
+        """
+        label = QLabel(attr.replace("_", " ").title() + ":")
+        label.setStyleSheet("font-weight: bold; color: #333;")
+        value_label = QLabel()
+        layout.addRow(label, value_label)
+        self.stock_info_widgets[attr] = value_label

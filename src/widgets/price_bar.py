@@ -14,10 +14,10 @@ class PriceBarWidget(QWidget):
         self.trade_prices = []
 
     def set_prices(self, high_52_week, low_52_week, current_price, buy_average, trade_prices):
-        self.high_52_week = high_52_week
-        self.low_52_week = low_52_week
-        self.current_price = current_price
-        self.buy_average = buy_average
+        self.high_52_week = round(high_52_week, 2)
+        self.low_52_week = round(low_52_week, 2)
+        self.current_price = round(current_price, 2)
+        self.buy_average = round(buy_average, 2)
         self.trade_prices = trade_prices
         self.update()
 
