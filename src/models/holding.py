@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from src.models.trade import Trade
 from src.models.stock_info import StockInfo
 
+
 @dataclass
 class Holding:
     # Current status

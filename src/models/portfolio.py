@@ -1,8 +1,8 @@
 from typing import List
 from dataclasses import dataclass
 
-from models.holding import Holding
-from models.stock_info import StockInfo
+from src.models.holding import Holding
+from src.models.stock_info import StockInfo
 
 @dataclass
 class Portfolio:

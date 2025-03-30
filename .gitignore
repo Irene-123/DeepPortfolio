@@ -2,3 +2,6 @@ metadata/**
 trading_agent_env/**
 **/__pycache__/**
 user_data/**
+venv/
+.gitignore
+.vscode/launch.json
